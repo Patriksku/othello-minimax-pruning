@@ -62,10 +62,10 @@ public class ExampleAgentOne extends Agent{
 	private MoveAndValue getExampleMove(GameBoardState gameState, int depth, MoveAndValue a, MoveAndValue b, boolean maximizingPlayer){
 
 		if(depth > 5 || gameState.isTerminal()) {
-			return new MoveAndValue(gameState.getWhiteCount()-gameState.getBlackCount(), new MoveWrapper(gameState.getLeadingMove()));
+			return new MoveAndValue(gameState.getBlackCount()-gameState.getWhiteCount(), new MoveWrapper(gameState.getLeadingMove()));
 		}
 		if(maximizingPlayer){
-			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
+			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
 			MoveAndValue value = new MoveAndValue(Integer.MIN_VALUE, null);
 			for(int i = 0; i < pathlist.size(); i++){
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
@@ -81,7 +81,7 @@ public class ExampleAgentOne extends Agent{
 			return value;
 
 		}else{
-			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
+			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
 			MoveAndValue value = new MoveAndValue(Integer.MAX_VALUE,null);
 			for(int i = 0; i < pathlist.size(); i++){
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
@@ -93,6 +93,7 @@ public class ExampleAgentOne extends Agent{
 				if(a.value >= b.value){
 					break;
 				}
+				value.move = new MoveWrapper(nextState.getLeadingMove());
 			}
 			return value;
 		}
