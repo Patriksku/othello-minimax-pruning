@@ -16,16 +16,16 @@ import com.eudycontreras.othello.threading.TimeSpan;
  * You may obtain a copy of the License at
  * <a href="https://www.mozilla.org/en-US/MPL/2.0/">visit Mozilla Public Lincense Version 2.0</a>
  * <H2>Class description</H2>
- * 
+ *
  * @author Eudy Contreras
  */
 public class ExampleAgentA extends Agent{
-	
+
 	private ExampleAgentA() {
 		super(PlayerTurn.PLAYER_ONE);
 		// TODO Auto-generated constructor stub
 	}
-	
+
 	private ExampleAgentA(PlayerTurn playerTurn) {
 		super(playerTurn);
 		// TODO Auto-generated constructor stub
@@ -38,21 +38,22 @@ public class ExampleAgentA extends Agent{
 	public AgentMove getMove(GameBoardState gameState) {
 		return getExampleMove(gameState);
 	}
-	
+
 	/**
 	 * Default template move which serves as an example of how to implement move
 	 * making logic. Note that this method does not use Alpha beta pruning and
 	 * the use of this method can disqualify you
-	 * 
+	 *
 	 * @param gameState
 	 * @return
 	 */
 	private AgentMove getExampleMove(GameBoardState gameState){
-		
+
+
 		int waitTime = UserSettings.MIN_SEARCH_TIME; // 1.5 seconds
-		
+
 		ThreadManager.pause(TimeSpan.millis(waitTime)); // Pauses execution for the wait time to cause delay
-		
+
 		return AgentController.getExampleMove(gameState, playerTurn); // returns an example AI move Note: this is not AB Pruning
 	}
 
