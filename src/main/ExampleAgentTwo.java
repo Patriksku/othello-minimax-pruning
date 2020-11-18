@@ -1,12 +1,16 @@
 package main;
 
 import com.eudycontreras.othello.capsules.AgentMove;
+import com.eudycontreras.othello.capsules.MoveWrapper;
+import com.eudycontreras.othello.capsules.ObjectiveWrapper;
 import com.eudycontreras.othello.controllers.AgentController;
 import com.eudycontreras.othello.controllers.Agent;
 import com.eudycontreras.othello.enumerations.PlayerTurn;
 import com.eudycontreras.othello.models.GameBoardState;
 import com.eudycontreras.othello.threading.ThreadManager;
 import com.eudycontreras.othello.threading.TimeSpan;
+
+import java.util.List;
 
 /**
  * <H2>Created by</h2> Eudy Contreras
@@ -40,24 +44,109 @@ public class ExampleAgentTwo extends Agent{
 	 */
 	@Override
 	public AgentMove getMove(GameBoardState gameState) {
-		return getExampleMove(gameState);
+		System.out.println("-------------------------------------");
+		return getExampleMove(gameState, 0, new MoveAndValue(Integer.MIN_VALUE, null), new MoveAndValue(Integer.MAX_VALUE,null),false).move;
 	}
-	
+
 	/**
 	 * Default template move which serves as an example of how to implement move
 	 * making logic. Note that this method does not use Alpha beta pruning and
 	 * the use of this method can disqualify you
-	 * 
+	 *
 	 * @param gameState
 	 * @return
 	 */
-	private AgentMove getExampleMove(GameBoardState gameState){
-		
-		int waitTime = UserSettings.MIN_SEARCH_TIME; // 1.5 seconds
-		
-		ThreadManager.pause(TimeSpan.millis(waitTime)); // Pauses execution for the wait time to cause delay
-		
-		return AgentController.getExampleMove(gameState, playerTurn); // returns an example AI move Note: this is not AB Pruning
+	private MoveAndValue getExampleMove(GameBoardState gameState, int depth, MoveAndValue a, MoveAndValue b, boolean maximizingPlayer){
+		String debugOffset = "|";
+		for(int i = 0; i< depth; i++){
+			debugOffset+= "   ";
+		}
+
+		if(depth > 4 || gameState.isTerminal()) {
+			return new MoveAndValue((int)AgentController.getDynamicHeuristic(gameState), new MoveWrapper(gameState.getLeadingMove()));
+		}
+
+
+		if(maximizingPlayer){
+			System.out.println(debugOffset+" MAX");
+			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
+			MoveAndValue value;
+			MoveAndValue bestValue;
+			try {
+				bestValue = new MoveAndValue(Integer.MIN_VALUE, new MoveWrapper(pathlist.get(0)));
+			}catch(Exception e){
+				bestValue = new MoveAndValue(Integer.MIN_VALUE, null);
+			}
+			System.out.println(debugOffset+" depth: "+depth);
+			System.out.println(debugOffset+" Pathiist: "+pathlist.size());
+			for(int i = 0; i < pathlist.size(); i++){
+
+				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
+
+				value = getExampleMove(nextState, depth+1, a, b, false);
+
+				if(value.value > bestValue.value){
+					bestValue = value;
+					bestValue.move = new MoveWrapper(nextState.getLeadingMove());
+				}
+				if(a.value < bestValue.value){
+					System.out.println(debugOffset+bestValue.value+" Better than "+a.value);
+					a = bestValue;
+				}
+				System.out.println(debugOffset+" Value: "+value.value);
+				if(a.value >= b.value){
+					System.out.println(debugOffset+" Pruned");
+					break;
+				}
+
+			}
+			System.out.println(debugOffset+" Returned");
+			if(bestValue.value == Integer.MIN_VALUE){
+				bestValue.value = Integer.MAX_VALUE;
+			}
+			return bestValue;
+
+
+		}else{
+			System.out.println(debugOffset+" MIN");
+			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
+			MoveAndValue value;
+			MoveAndValue bestValue;
+			try {
+				bestValue = new MoveAndValue(Integer.MAX_VALUE, new MoveWrapper(pathlist.get(0)));
+			}catch(Exception e){
+				bestValue = new MoveAndValue(Integer.MAX_VALUE, null);
+			}
+			System.out.println(debugOffset+" depth: "+depth);
+			System.out.println(debugOffset+" Pathiist: "+pathlist.size());
+			for(int i = 0; i < pathlist.size(); i++){
+
+				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
+
+				value = getExampleMove(nextState, depth+1, a, b, true);
+
+				if(value.value < bestValue.value){
+					bestValue = value;
+					bestValue.move = new MoveWrapper(nextState.getLeadingMove());
+				}
+				if(b.value > bestValue.value){
+					System.out.println(debugOffset+bestValue.value+" Better than "+b.value);
+					b = bestValue;
+				}
+
+				System.out.println(debugOffset+" Value: "+value.value);
+				if(a.value >= b.value){
+					System.out.println(debugOffset+" Pruned");
+					break;
+				}
+
+			}
+			System.out.println(debugOffset+" Returned");
+			if(bestValue.value == Integer.MAX_VALUE){
+				bestValue.value = Integer.MIN_VALUE;
+			}
+			return bestValue;
+		}
 	}
 
 }

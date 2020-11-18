@@ -46,9 +46,8 @@ public class ExampleAgentOne extends Agent{
 	public AgentMove getMove(GameBoardState gameState) {
 
 
-
+		System.out.println("-------------------------------------");
 		return getExampleMove(gameState, 0, new MoveAndValue(Integer.MIN_VALUE, null), new MoveAndValue(Integer.MAX_VALUE,null),true).move;
-
 	}
 
 	/**
@@ -60,42 +59,95 @@ public class ExampleAgentOne extends Agent{
 	 * @return
 	 */
 	private MoveAndValue getExampleMove(GameBoardState gameState, int depth, MoveAndValue a, MoveAndValue b, boolean maximizingPlayer){
-
-		if(depth > 5 || gameState.isTerminal()) {
-			return new MoveAndValue(gameState.getBlackCount()-gameState.getWhiteCount(), new MoveWrapper(gameState.getLeadingMove()));
+		String debugOffset = "|";
+		for(int i = 0; i< depth; i++){
+			debugOffset+= "   ";
 		}
+
+		if(depth > 4 || gameState.isTerminal()) {
+			return new MoveAndValue((int)AgentController.getDynamicHeuristic(gameState), new MoveWrapper(gameState.getLeadingMove()));
+		}
+
+
 		if(maximizingPlayer){
-			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
-			MoveAndValue value = new MoveAndValue(Integer.MIN_VALUE, null);
+			System.out.println(debugOffset+" MAX");
+			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
+			MoveAndValue value;
+			MoveAndValue bestValue;
+			try {
+				bestValue = new MoveAndValue(Integer.MIN_VALUE, new MoveWrapper(pathlist.get(0)));
+			}catch(Exception e){
+				bestValue = new MoveAndValue(Integer.MIN_VALUE, null);
+			}
+			System.out.println(debugOffset+" depth: "+depth);
+			System.out.println(debugOffset+" Pathiist: "+pathlist.size());
 			for(int i = 0; i < pathlist.size(); i++){
+
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
 				value = getExampleMove(nextState, depth+1, a, b, false);
-				if(a.value < value.value){
-					a = value;
+
+				if(value.value > bestValue.value){
+					bestValue = value;
+					bestValue.move = new MoveWrapper(nextState.getLeadingMove());
 				}
+				if(a.value < bestValue.value){
+					System.out.println(debugOffset+bestValue.value+" Better than "+a.value);
+					a = bestValue;
+				}
+				System.out.println(debugOffset+" Value: "+value.value);
 				if(a.value >= b.value){
+					System.out.println(debugOffset+" Pruned");
 					break;
 				}
+
 			}
-			return value;
+			System.out.println(debugOffset+" Returned");
+			if(bestValue.value == Integer.MIN_VALUE){
+				bestValue.value = Integer.MAX_VALUE;
+			}
+			return bestValue;
+
 
 		}else{
-			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
-			MoveAndValue value = new MoveAndValue(Integer.MAX_VALUE,null);
+			System.out.println(debugOffset+" MIN");
+			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
+			MoveAndValue value;
+			MoveAndValue bestValue;
+			try {
+				bestValue = new MoveAndValue(Integer.MAX_VALUE, new MoveWrapper(pathlist.get(0)));
+			}catch(Exception e){
+				bestValue = new MoveAndValue(Integer.MAX_VALUE, null);
+			}
+			System.out.println(debugOffset+" depth: "+depth);
+			System.out.println(debugOffset+" Pathiist: "+pathlist.size());
 			for(int i = 0; i < pathlist.size(); i++){
+
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
 				value = getExampleMove(nextState, depth+1, a, b, true);
-				if(a.value > value.value){
-					a = value;
+
+				if(value.value < bestValue.value){
+					bestValue = value;
+					bestValue.move = new MoveWrapper(nextState.getLeadingMove());
 				}
+				if(b.value > bestValue.value){
+					System.out.println(debugOffset+bestValue.value+" Better than "+b.value);
+					b = bestValue;
+				}
+
+				System.out.println(debugOffset+" Value: "+value.value);
 				if(a.value >= b.value){
+					System.out.println(debugOffset+" Pruned");
 					break;
 				}
-				value.move = new MoveWrapper(nextState.getLeadingMove());
+
 			}
-			return value;
+			System.out.println(debugOffset+" Returned");
+			if(bestValue.value == Integer.MAX_VALUE){
+				bestValue.value = Integer.MIN_VALUE;
+			}
+			return bestValue;
 		}
 	}
 
