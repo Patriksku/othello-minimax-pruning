@@ -10,6 +10,7 @@ import com.eudycontreras.othello.models.GameBoardState;
 import com.eudycontreras.othello.threading.ThreadManager;
 import com.eudycontreras.othello.threading.TimeSpan;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -20,23 +21,25 @@ import java.util.List;
  * You may obtain a copy of the License at
  * <a href="https://www.mozilla.org/en-US/MPL/2.0/">visit Mozilla Public Lincense Version 2.0</a>
  * <H2>Class description</H2>
- * 
+ *
  * @author Eudy Contreras
  */
 public class ExampleAgentOne extends Agent{
-	
-	
+
+	private int depthLimit = 8;
+
+
 	public ExampleAgentOne() {
 		this(PlayerTurn.PLAYER_ONE);
 	}
-	
+
 	public ExampleAgentOne(String name) {
 		super(name, PlayerTurn.PLAYER_ONE);
 	}
-	
+
 	public ExampleAgentOne(PlayerTurn playerTurn) {
 		super(playerTurn);
-	
+
 	}
 
 	/**
@@ -44,111 +47,83 @@ public class ExampleAgentOne extends Agent{
 	 */
 	@Override
 	public AgentMove getMove(GameBoardState gameState) {
-
-
-		System.out.println("-------------------------------------");
-		return getExampleMove(gameState, 0, new MoveAndValue(Integer.MIN_VALUE, null), new MoveAndValue(Integer.MAX_VALUE,null),true).move;
+		return getExampleMove(gameState, 0, Double.MIN_VALUE, Double.MAX_VALUE,true).move;
 	}
 
 	/**
 	 * Default template move which serves as an example of how to implement move
 	 * making logic. Note that this method does not use Alpha beta pruning and
 	 * the use of this method can disqualify you
-	 * 
+	 *
 	 * @param gameState
 	 * @return
 	 */
-	private MoveAndValue getExampleMove(GameBoardState gameState, int depth, MoveAndValue a, MoveAndValue b, boolean maximizingPlayer){
-		String debugOffset = "|";
-		for(int i = 0; i< depth; i++){
-			debugOffset+= "   ";
+	private MoveAndValue getExampleMove(GameBoardState gameState, int depth, double alpha, double beta, boolean maximizingPlayer){
+
+
+		if (depth == depthLimit || AgentController.isTerminal(gameState, playerTurn)) {
+			double value = AgentController.getMobilityHeuristic(gameState);
+			return new MoveAndValue(value, new MoveWrapper(gameState.getLeadingMove()));
 		}
 
-		if(depth > 4 || gameState.isTerminal()) {
-			return new MoveAndValue((int)AgentController.getDynamicHeuristic(gameState), new MoveWrapper(gameState.getLeadingMove()));
-		}
 
+		if (maximizingPlayer) {
+			MoveAndValue maxEval = new MoveAndValue(Double.MIN_VALUE, null);
 
-		if(maximizingPlayer){
-			System.out.println(debugOffset+" MAX");
-			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
-			MoveAndValue value;
-			MoveAndValue bestValue;
-			try {
-				bestValue = new MoveAndValue(Integer.MIN_VALUE, new MoveWrapper(pathlist.get(0)));
-			}catch(Exception e){
-				bestValue = new MoveAndValue(Integer.MIN_VALUE, null);
-			}
-			System.out.println(debugOffset+" depth: "+depth);
-			System.out.println(debugOffset+" Pathiist: "+pathlist.size());
-			for(int i = 0; i < pathlist.size(); i++){
+			List<ObjectiveWrapper> availableMoves = AgentController.getAvailableMoves(gameState, playerTurn);
 
-				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
+			for (ObjectiveWrapper move : availableMoves) {
+				GameBoardState child = AgentController.getNewState(gameState, move); // Create child (a game board state)
 
-				value = getExampleMove(nextState, depth+1, a, b, false);
+				MoveAndValue eval = getExampleMove(child, (depth + 1), alpha, beta, false);
+				maxEval.value = Math.max(maxEval.value, eval.value);
 
-				if(value.value > bestValue.value){
-					bestValue = value;
-					bestValue.move = new MoveWrapper(nextState.getLeadingMove());
+				// Choose the first available move if no move has been assigned as the best yet.
+				if (maxEval.move == null) {
+					maxEval.move = new MoveWrapper(child.getLeadingMove());
+				} else if (maxEval.value > eval.value) { // Compare current move with the newly found move, if better --> Replace.
+					maxEval.move = eval.move;
 				}
-				if(a.value < bestValue.value){
-					System.out.println(debugOffset+bestValue.value+" Better than "+a.value);
-					a = bestValue;
-				}
-				System.out.println(debugOffset+" Value: "+value.value);
-				if(a.value >= b.value){
-					System.out.println(debugOffset+" Pruned");
+
+				alpha = Math.max(alpha, eval.value);
+				System.out.println("alpha: " + alpha);
+
+				if (beta <= alpha) {
+					System.out.println("PRUNED");
 					break;
 				}
-
 			}
-			System.out.println(debugOffset+" Returned");
-			if(bestValue.value == Integer.MIN_VALUE){
-				bestValue.value = Integer.MAX_VALUE;
-			}
-			return bestValue;
 
+			return maxEval;
 
-		}else{
-			System.out.println(debugOffset+" MIN");
-			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
-			MoveAndValue value;
-			MoveAndValue bestValue;
-			try {
-				bestValue = new MoveAndValue(Integer.MAX_VALUE, new MoveWrapper(pathlist.get(0)));
-			}catch(Exception e){
-				bestValue = new MoveAndValue(Integer.MAX_VALUE, null);
-			}
-			System.out.println(debugOffset+" depth: "+depth);
-			System.out.println(debugOffset+" Pathiist: "+pathlist.size());
-			for(int i = 0; i < pathlist.size(); i++){
+		} else {
+			MoveAndValue minEval = new MoveAndValue(Double.MAX_VALUE, null);
 
-				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
+			List<ObjectiveWrapper> availableMoves = AgentController.getAvailableMoves(gameState, playerTurn);
 
-				value = getExampleMove(nextState, depth+1, a, b, true);
+			for (ObjectiveWrapper move : availableMoves) {
+				GameBoardState child = AgentController.getNewState(gameState, move); // Create child (a game board state)
 
-				if(value.value < bestValue.value){
-					bestValue = value;
-					bestValue.move = new MoveWrapper(nextState.getLeadingMove());
-				}
-				if(b.value > bestValue.value){
-					System.out.println(debugOffset+bestValue.value+" Better than "+b.value);
-					b = bestValue;
+				MoveAndValue eval = getExampleMove(child, (depth + 1), alpha, beta, true);
+				minEval.value = Math.min(minEval.value, eval.value);
+
+				// Choose the first available move if no move has been assigned as the best yet.
+				if (minEval.move == null) {
+					minEval.move = new MoveWrapper(child.getLeadingMove());
+				} else if (minEval.value < eval.value) { // Compare current move with the newly found move, if better --> Replace.
+					minEval.move = eval.move;
 				}
 
-				System.out.println(debugOffset+" Value: "+value.value);
-				if(a.value >= b.value){
-					System.out.println(debugOffset+" Pruned");
+				beta = Math.min(beta, eval.value);
+				System.out.println("beta: " + beta);
+
+				if (beta <= alpha) {
+					System.out.println("PRUNED");
 					break;
 				}
+			}
 
-			}
-			System.out.println(debugOffset+" Returned");
-			if(bestValue.value == Integer.MAX_VALUE){
-				bestValue.value = Integer.MIN_VALUE;
-			}
-			return bestValue;
+			return minEval;
 		}
 	}
-
 }
