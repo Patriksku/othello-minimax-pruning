@@ -47,7 +47,7 @@ public class ExampleAgentOne extends Agent{
 
 
 		System.out.println("-------------------------------------");
-		return getExampleMove(gameState, 0, new MoveAndValue(Integer.MIN_VALUE, null), new MoveAndValue(Integer.MAX_VALUE,null),true).move;
+		return getExampleMove(gameState, 4, new MoveAndValue(Integer.MIN_VALUE, null), new MoveAndValue(Integer.MAX_VALUE,null),true).move;
 	}
 
 	/**
@@ -59,17 +59,15 @@ public class ExampleAgentOne extends Agent{
 	 * @return
 	 */
 	private MoveAndValue getExampleMove(GameBoardState gameState, int depth, MoveAndValue a, MoveAndValue b, boolean maximizingPlayer){
-		String debugOffset = "|";
+		String debugOffset = "";
 		for(int i = 0; i< depth; i++){
 			debugOffset+= "   ";
 		}
-
-		if(depth > 4 || gameState.isTerminal()) {
-			return new MoveAndValue((int)AgentController.getDynamicHeuristic(gameState), new MoveWrapper(gameState.getLeadingMove()));
-		}
-
-
+		debugOffset += "|";
 		if(maximizingPlayer){
+			if (depth == 0 || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE).size() == 0) {
+				return new MoveAndValue((int)AgentController.getMobilityHeuristic(gameState), new MoveWrapper(gameState.getLeadingMove()));
+			}
 			System.out.println(debugOffset+" MAX");
 			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
 			MoveAndValue value;
@@ -85,7 +83,7 @@ public class ExampleAgentOne extends Agent{
 
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
-				value = getExampleMove(nextState, depth+1, a, b, false);
+				value = getExampleMove(nextState, depth-1, a, b, false);
 
 				if(value.value > bestValue.value){
 					bestValue = value;
@@ -103,13 +101,13 @@ public class ExampleAgentOne extends Agent{
 
 			}
 			System.out.println(debugOffset+" Returned");
-			if(bestValue.value == Integer.MIN_VALUE){
-				bestValue.value = Integer.MAX_VALUE;
-			}
 			return bestValue;
 
 
 		}else{
+			if (depth == 0 || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO).size() == 0) {
+				return new MoveAndValue((int)AgentController.getMobilityHeuristic(gameState), new MoveWrapper(gameState.getLeadingMove()));
+			}
 			System.out.println(debugOffset+" MIN");
 			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
 			MoveAndValue value;
@@ -125,7 +123,7 @@ public class ExampleAgentOne extends Agent{
 
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
-				value = getExampleMove(nextState, depth+1, a, b, true);
+				value = getExampleMove(nextState, depth-1, a, b, true);
 
 				if(value.value < bestValue.value){
 					bestValue = value;
@@ -144,9 +142,6 @@ public class ExampleAgentOne extends Agent{
 
 			}
 			System.out.println(debugOffset+" Returned");
-			if(bestValue.value == Integer.MAX_VALUE){
-				bestValue.value = Integer.MIN_VALUE;
-			}
 			return bestValue;
 		}
 	}
