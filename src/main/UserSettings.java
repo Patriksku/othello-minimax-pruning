@@ -122,4 +122,7 @@ public class UserSettings {
 	public static final int G = -128;
 	public static final int H = -256;
 
+	public static final int staticDepth = 3;
+	public static final int staticDepth2 = 3;
+
 }

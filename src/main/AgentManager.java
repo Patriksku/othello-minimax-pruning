@@ -2,7 +2,6 @@ package main;
 
 import com.eudycontreras.othello.application.Othello;
 import com.eudycontreras.othello.enumerations.BoardCellState;
-import com.eudycontreras.othello.enumerations.PlayerTurn;
 import com.eudycontreras.othello.models.GameBoardCell;
 
 import javafx.application.Application;
@@ -52,7 +51,7 @@ public class AgentManager extends Application{
 	 */
 	@Override
 	public void start(Stage primaryStage) {
-		new Othello(primaryStage, new ExampleAgentOne("Agent A"),new ExampleAgentTwo("Agent b"));
+		new Othello(primaryStage, new AiAgent("Agent A"),new ExampleAgentTwo("Agent b"));
 		//new Othello(primaryStage, new ExampleAgentB());
 		//new Othello(primaryStage, new ExampleAgentC());
 		//new Othello(primaryStage, new ExampleAgentD());

@@ -7,8 +7,6 @@ import com.eudycontreras.othello.controllers.AgentController;
 import com.eudycontreras.othello.controllers.Agent;
 import com.eudycontreras.othello.enumerations.PlayerTurn;
 import com.eudycontreras.othello.models.GameBoardState;
-import com.eudycontreras.othello.threading.ThreadManager;
-import com.eudycontreras.othello.threading.TimeSpan;
 
 import java.util.List;
 
@@ -23,18 +21,20 @@ import java.util.List;
  * 
  * @author Eudy Contreras
  */
-public class ExampleAgentOne extends Agent{
+public class AiAgent extends Agent{
 	
 	
-	public ExampleAgentOne() {
+	public AiAgent() {
 		this(PlayerTurn.PLAYER_ONE);
 	}
+
+	public long startTime = 0;
 	
-	public ExampleAgentOne(String name) {
+	public AiAgent(String name) {
 		super(name, PlayerTurn.PLAYER_ONE);
 	}
 	
-	public ExampleAgentOne(PlayerTurn playerTurn) {
+	public AiAgent(PlayerTurn playerTurn) {
 		super(playerTurn);
 	
 	}
@@ -45,9 +45,9 @@ public class ExampleAgentOne extends Agent{
 	@Override
 	public AgentMove getMove(GameBoardState gameState) {
 
-
+		startTime = AgentController.getElapsedTime(0);
 		System.out.println("-------------------------------------");
-		return getExampleMove(gameState, 4, new MoveAndValue(Integer.MIN_VALUE, null), new MoveAndValue(Integer.MAX_VALUE,null),true).move;
+		return getExampleMove(gameState, 0, new MoveAndValue(Integer.MIN_VALUE, null), new MoveAndValue(Integer.MAX_VALUE,null),true).move;
 	}
 
 	/**
@@ -59,14 +59,19 @@ public class ExampleAgentOne extends Agent{
 	 * @return
 	 */
 	private MoveAndValue getExampleMove(GameBoardState gameState, int depth, MoveAndValue a, MoveAndValue b, boolean maximizingPlayer){
+		this.setNodesExamined(this.getNodesExamined()+1);
 		String debugOffset = "";
 		for(int i = 0; i< depth; i++){
 			debugOffset+= "   ";
 		}
 		debugOffset += "|";
 		if(maximizingPlayer){
-			if (depth == 0 || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE).size() == 0) {
-				return new MoveAndValue((int)AgentController.getMobilityHeuristic(gameState), new MoveWrapper(gameState.getLeadingMove()));
+			if (depth == UserSettings.staticDepth || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE).size() == 0 || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
+				if(this.getSearchDepth() < depth){
+					this.setSearchDepth(depth);
+				}
+				this.setReachedLeafNodes(this.getReachedLeafNodes()+1);
+				return new MoveAndValue(gameState.getWhiteCount()-gameState.getBlackCount(), new MoveWrapper(gameState.getLeadingMove()));
 			}
 			System.out.println(debugOffset+" MAX");
 			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
@@ -83,7 +88,7 @@ public class ExampleAgentOne extends Agent{
 
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
-				value = getExampleMove(nextState, depth-1, a, b, false);
+				value = getExampleMove(nextState, depth+1, a, b, false);
 
 				if(value.value > bestValue.value){
 					bestValue = value;
@@ -95,6 +100,7 @@ public class ExampleAgentOne extends Agent{
 				}
 				System.out.println(debugOffset+" Value: "+value.value);
 				if(a.value >= b.value){
+					this.setPrunedCounter(this.getPrunedCounter()+1);
 					System.out.println(debugOffset+" Pruned");
 					break;
 				}
@@ -103,10 +109,13 @@ public class ExampleAgentOne extends Agent{
 			System.out.println(debugOffset+" Returned");
 			return bestValue;
 
-
 		}else{
-			if (depth == 0 || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO).size() == 0) {
-				return new MoveAndValue((int)AgentController.getMobilityHeuristic(gameState), new MoveWrapper(gameState.getLeadingMove()));
+			if (depth == UserSettings.staticDepth || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO).size() == 0 || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
+				if(this.getSearchDepth() < depth){
+					this.setSearchDepth(depth);
+				}
+				this.setReachedLeafNodes(this.getReachedLeafNodes()+1);
+				return new MoveAndValue(gameState.getWhiteCount()-gameState.getBlackCount(), new MoveWrapper(gameState.getLeadingMove()));
 			}
 			System.out.println(debugOffset+" MIN");
 			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
@@ -123,7 +132,7 @@ public class ExampleAgentOne extends Agent{
 
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
-				value = getExampleMove(nextState, depth-1, a, b, true);
+				value = getExampleMove(nextState, depth+1, a, b, true);
 
 				if(value.value < bestValue.value){
 					bestValue = value;
@@ -136,10 +145,10 @@ public class ExampleAgentOne extends Agent{
 
 				System.out.println(debugOffset+" Value: "+value.value);
 				if(a.value >= b.value){
+					this.setPrunedCounter(this.getPrunedCounter()+1);
 					System.out.println(debugOffset+" Pruned");
 					break;
 				}
-
 			}
 			System.out.println(debugOffset+" Returned");
 			return bestValue;

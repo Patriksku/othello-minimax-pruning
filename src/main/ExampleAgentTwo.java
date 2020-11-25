@@ -24,19 +24,21 @@ import java.util.List;
  * @author Eudy Contreras
  */
 public class ExampleAgentTwo extends Agent{
-	
-	
+
+
 	public ExampleAgentTwo() {
-		this(PlayerTurn.PLAYER_TWO);
+		this(PlayerTurn.PLAYER_ONE);
 	}
-	
+
+	public long startTime = 0;
+
 	public ExampleAgentTwo(String name) {
-		super(name, PlayerTurn.PLAYER_TWO);
+		super(name, PlayerTurn.PLAYER_ONE);
 	}
-	
+
 	public ExampleAgentTwo(PlayerTurn playerTurn) {
 		super(playerTurn);
-		// TODO Auto-generated constructor stub
+
 	}
 
 	/**
@@ -44,8 +46,10 @@ public class ExampleAgentTwo extends Agent{
 	 */
 	@Override
 	public AgentMove getMove(GameBoardState gameState) {
+
+		startTime = AgentController.getElapsedTime(0);
 		System.out.println("-------------------------------------");
-		return getExampleMove(gameState, 2, new MoveAndValue(Integer.MIN_VALUE, null), new MoveAndValue(Integer.MAX_VALUE,null),false).move;
+		return getExampleMove(gameState, 0, new MoveAndValue(Integer.MIN_VALUE, null), new MoveAndValue(Integer.MAX_VALUE,null),false).move;
 	}
 
 	/**
@@ -57,13 +61,18 @@ public class ExampleAgentTwo extends Agent{
 	 * @return
 	 */
 	private MoveAndValue getExampleMove(GameBoardState gameState, int depth, MoveAndValue a, MoveAndValue b, boolean maximizingPlayer){
+		this.setNodesExamined(this.getNodesExamined()+1);
 		String debugOffset = "";
 		for(int i = 0; i< depth; i++){
 			debugOffset+= "   ";
 		}
 		debugOffset += "|";
 		if(maximizingPlayer){
-			if (depth == 0 || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE).size() == 0) {
+			if (depth == UserSettings.staticDepth2 || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE).size() == 0 || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
+				if(this.getSearchDepth() < depth){
+					this.setSearchDepth(depth);
+				}
+				this.setReachedLeafNodes(this.getReachedLeafNodes()+1);
 				return new MoveAndValue((int)AgentController.getMobilityHeuristic(gameState), new MoveWrapper(gameState.getLeadingMove()));
 			}
 			System.out.println(debugOffset+" MAX");
@@ -81,7 +90,7 @@ public class ExampleAgentTwo extends Agent{
 
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
-				value = getExampleMove(nextState, depth-1, a, b, false);
+				value = getExampleMove(nextState, depth+1, a, b, false);
 
 				if(value.value > bestValue.value){
 					bestValue = value;
@@ -93,6 +102,7 @@ public class ExampleAgentTwo extends Agent{
 				}
 				System.out.println(debugOffset+" Value: "+value.value);
 				if(a.value >= b.value){
+					this.setPrunedCounter(this.getPrunedCounter()+1);
 					System.out.println(debugOffset+" Pruned");
 					break;
 				}
@@ -101,9 +111,12 @@ public class ExampleAgentTwo extends Agent{
 			System.out.println(debugOffset+" Returned");
 			return bestValue;
 
-
 		}else{
-			if (depth == 0 || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO).size() == 0) {
+			if (depth == UserSettings.staticDepth2 || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO).size() == 0 || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
+				if(this.getSearchDepth() < depth){
+					this.setSearchDepth(depth);
+				}
+				this.setReachedLeafNodes(this.getReachedLeafNodes()+1);
 				return new MoveAndValue((int)AgentController.getMobilityHeuristic(gameState), new MoveWrapper(gameState.getLeadingMove()));
 			}
 			System.out.println(debugOffset+" MIN");
@@ -121,7 +134,7 @@ public class ExampleAgentTwo extends Agent{
 
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
-				value = getExampleMove(nextState, depth-1, a, b, true);
+				value = getExampleMove(nextState, depth+1, a, b, true);
 
 				if(value.value < bestValue.value){
 					bestValue = value;
@@ -134,13 +147,14 @@ public class ExampleAgentTwo extends Agent{
 
 				System.out.println(debugOffset+" Value: "+value.value);
 				if(a.value >= b.value){
+					this.setPrunedCounter(this.getPrunedCounter()+1);
 					System.out.println(debugOffset+" Pruned");
 					break;
 				}
-
 			}
 			System.out.println(debugOffset+" Returned");
 			return bestValue;
 		}
 	}
+
 }
