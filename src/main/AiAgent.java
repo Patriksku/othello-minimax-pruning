@@ -46,6 +46,8 @@ public class AiAgent extends Agent{
 	public AgentMove getMove(GameBoardState gameState) {
 
 		startTime = AgentController.getElapsedTime(0);
+		this.setReachedLeafNodes(0);
+		this.setNodesExamined(0);
 		System.out.println("-------------------------------------");
 		return getExampleMove(gameState, 0, new MoveAndValue(Integer.MIN_VALUE, null), new MoveAndValue(Integer.MAX_VALUE,null),true).move;
 	}
@@ -68,12 +70,15 @@ public class AiAgent extends Agent{
 		//Maximizing players turn
 		if(maximizingPlayer){
 			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
+
 			//Checks if the ai reached max depth, ran out of time or is at a terminal node
-			if (depth == UserSettings.staticDepth || pathlist.size() == 0 || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
+			if (depth == UserSettings.staticDepth || AgentController.isTerminal(gameState, PlayerTurn.PLAYER_ONE) || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
 				if(this.getSearchDepth() < depth){
 					this.setSearchDepth(depth);
 				}
-				this.setReachedLeafNodes(this.getReachedLeafNodes()+1);
+				if (AgentController.isTerminal(gameState, PlayerTurn.PLAYER_ONE)) {
+					this.setReachedLeafNodes(this.getReachedLeafNodes() + 1);
+				}
 				return new MoveAndValue(gameState.getWhiteCount()-gameState.getBlackCount(), new MoveWrapper(gameState.getLeadingMove()));
 			}
 
@@ -97,7 +102,6 @@ public class AiAgent extends Agent{
 			//looping through all possible paths for a node
 			for(int i = 0; i < pathlist.size(); i++){
 
-				//getting paths
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
 				//Recursive call one level deeper
@@ -120,7 +124,9 @@ public class AiAgent extends Agent{
 
 				//Prunes
 				if(a.value >= b.value){
-					this.setPrunedCounter(this.getPrunedCounter()+1);
+					int movesUntilNow = (i + 1);
+					int prunedNodes = pathlist.size() - movesUntilNow;
+					this.setPrunedCounter(this.getPrunedCounter()+prunedNodes);
 					System.out.println(debugOffset+" Pruned");
 					break;
 				}
@@ -133,11 +139,13 @@ public class AiAgent extends Agent{
 			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
 
 			//Checks if the ai reached max depth, ran out of time or is at a terminal node
-			if (depth == UserSettings.staticDepth || pathlist.size() == 0 || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
+			if (depth == UserSettings.staticDepth || AgentController.isTerminal(gameState, PlayerTurn.PLAYER_TWO) || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
 				if(this.getSearchDepth() < depth){
 					this.setSearchDepth(depth);
 				}
-				this.setReachedLeafNodes(this.getReachedLeafNodes()+1);
+				if (AgentController.isTerminal(gameState, PlayerTurn.PLAYER_TWO)) {
+					this.setReachedLeafNodes(this.getReachedLeafNodes() + 1);
+				}
 				return new MoveAndValue(gameState.getWhiteCount()-gameState.getBlackCount(), new MoveWrapper(gameState.getLeadingMove()));
 			}
 			//debug
@@ -161,7 +169,6 @@ public class AiAgent extends Agent{
 			//looping through all possible paths for a node
 			for(int i = 0; i < pathlist.size(); i++){
 
-				//getting paths
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
 				//Recursive call one level deeper
@@ -183,7 +190,9 @@ public class AiAgent extends Agent{
 
 				//prunes
 				if(a.value >= b.value){
-					this.setPrunedCounter(this.getPrunedCounter()+1);
+					int movesUntilNow = (i + 1);
+					int prunedNodes = pathlist.size() - movesUntilNow;
+					this.setPrunedCounter(this.getPrunedCounter()+prunedNodes);
 					System.out.println(debugOffset+" Pruned");
 					break;
 				}
