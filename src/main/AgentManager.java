@@ -51,7 +51,7 @@ public class AgentManager extends Application{
 	 */
 	@Override
 	public void start(Stage primaryStage) {
-		new Othello(primaryStage, new AiAgent("Agent A"),new ExampleAgentTwo("Agent b"));
+		new Othello(primaryStage, new AiAgent("AIAgent"));
 		//new Othello(primaryStage, new ExampleAgentB());
 		//new Othello(primaryStage, new ExampleAgentC());
 		//new Othello(primaryStage, new ExampleAgentD());

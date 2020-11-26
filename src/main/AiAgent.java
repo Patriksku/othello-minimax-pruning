@@ -40,7 +40,7 @@ public class AiAgent extends Agent{
 	}
 
 	/**
-	 * Delete the content of this method and Implement your logic here!
+	 * Move method, Returns Ai Move
 	 */
 	@Override
 	public AgentMove getMove(GameBoardState gameState) {
@@ -51,108 +51,146 @@ public class AiAgent extends Agent{
 	}
 
 	/**
-	 * Default template move which serves as an example of how to implement move
-	 * making logic. Note that this method does not use Alpha beta pruning and
-	 * the use of this method can disqualify you
+	 * Minmax algoritm
 	 * 
 	 * @param gameState
-	 * @return
+	 * @return An ai move
 	 */
 	private MoveAndValue getExampleMove(GameBoardState gameState, int depth, MoveAndValue a, MoveAndValue b, boolean maximizingPlayer){
+		//Creating debug string
 		this.setNodesExamined(this.getNodesExamined()+1);
 		String debugOffset = "";
 		for(int i = 0; i< depth; i++){
 			debugOffset+= "   ";
 		}
 		debugOffset += "|";
+
+		//Maximizing players turn
 		if(maximizingPlayer){
-			if (depth == UserSettings.staticDepth || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE).size() == 0 || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
+			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
+			//Checks if the ai reached max depth, ran out of time or is at a terminal node
+			if (depth == UserSettings.staticDepth || pathlist.size() == 0 || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
 				if(this.getSearchDepth() < depth){
 					this.setSearchDepth(depth);
 				}
 				this.setReachedLeafNodes(this.getReachedLeafNodes()+1);
 				return new MoveAndValue(gameState.getWhiteCount()-gameState.getBlackCount(), new MoveWrapper(gameState.getLeadingMove()));
 			}
+
+			//debug
 			System.out.println(debugOffset+" MAX");
-			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_ONE);
+
 			MoveAndValue value;
 			MoveAndValue bestValue;
+
+			//Creating default MoveAndValue
 			try {
 				bestValue = new MoveAndValue(Integer.MIN_VALUE, new MoveWrapper(pathlist.get(0)));
 			}catch(Exception e){
 				bestValue = new MoveAndValue(Integer.MIN_VALUE, null);
 			}
+
+			//debug
 			System.out.println(debugOffset+" depth: "+depth);
 			System.out.println(debugOffset+" Pathiist: "+pathlist.size());
+
+			//looping through all possible paths for a node
 			for(int i = 0; i < pathlist.size(); i++){
 
+				//getting paths
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
+				//Recursive call one level deeper
 				value = getExampleMove(nextState, depth+1, a, b, false);
 
+				//Replaces current nodes value and move if the new one is better
 				if(value.value > bestValue.value){
 					bestValue = value;
 					bestValue.move = new MoveWrapper(nextState.getLeadingMove());
 				}
+
+				//replaces a if the new value is better
 				if(a.value < bestValue.value){
 					System.out.println(debugOffset+bestValue.value+" Better than "+a.value);
 					a = bestValue;
 				}
+
+				//debug
 				System.out.println(debugOffset+" Value: "+value.value);
+
+				//Prunes
 				if(a.value >= b.value){
 					this.setPrunedCounter(this.getPrunedCounter()+1);
 					System.out.println(debugOffset+" Pruned");
 					break;
 				}
-
 			}
+			//debug
 			System.out.println(debugOffset+" Returned");
 			return bestValue;
 
 		}else{
-			if (depth == UserSettings.staticDepth || AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO).size() == 0 || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
+			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
+
+			//Checks if the ai reached max depth, ran out of time or is at a terminal node
+			if (depth == UserSettings.staticDepth || pathlist.size() == 0 || AgentController.timeLimitExceeded(UserSettings.MAX_SEARCH_TIME,startTime)) {
 				if(this.getSearchDepth() < depth){
 					this.setSearchDepth(depth);
 				}
 				this.setReachedLeafNodes(this.getReachedLeafNodes()+1);
 				return new MoveAndValue(gameState.getWhiteCount()-gameState.getBlackCount(), new MoveWrapper(gameState.getLeadingMove()));
 			}
+			//debug
 			System.out.println(debugOffset+" MIN");
-			List<ObjectiveWrapper> pathlist = AgentController.getAvailableMoves(gameState, PlayerTurn.PLAYER_TWO);
+
+
 			MoveAndValue value;
 			MoveAndValue bestValue;
+
+			//Creating default MoveAndValue
 			try {
 				bestValue = new MoveAndValue(Integer.MAX_VALUE, new MoveWrapper(pathlist.get(0)));
 			}catch(Exception e){
 				bestValue = new MoveAndValue(Integer.MAX_VALUE, null);
 			}
+
+			//debug
 			System.out.println(debugOffset+" depth: "+depth);
 			System.out.println(debugOffset+" Pathiist: "+pathlist.size());
+
+			//looping through all possible paths for a node
 			for(int i = 0; i < pathlist.size(); i++){
 
+				//getting paths
 				GameBoardState nextState = AgentController.getNewState(gameState,pathlist.get(i));
 
+				//Recursive call one level deeper
 				value = getExampleMove(nextState, depth+1, a, b, true);
 
+				//Replaces current nodes value and move if the new one is better
 				if(value.value < bestValue.value){
 					bestValue = value;
 					bestValue.move = new MoveWrapper(nextState.getLeadingMove());
 				}
+
+				//replaces b if the new value is better
 				if(b.value > bestValue.value){
 					System.out.println(debugOffset+bestValue.value+" Better than "+b.value);
 					b = bestValue;
 				}
-
+				//debug
 				System.out.println(debugOffset+" Value: "+value.value);
+
+				//prunes
 				if(a.value >= b.value){
 					this.setPrunedCounter(this.getPrunedCounter()+1);
 					System.out.println(debugOffset+" Pruned");
 					break;
 				}
 			}
+			//debug
 			System.out.println(debugOffset+" Returned");
 			return bestValue;
 		}
 	}
-
 }
